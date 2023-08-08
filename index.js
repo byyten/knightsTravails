@@ -1,6 +1,4 @@
 
-/*
-
 node = (data = null, dist = null, prev = null) => {
     if (data == -1) return -1
     dist += 1
@@ -17,17 +15,6 @@ add = (p, m) => {
     }
     return [pm0, pm1]
 }
-
-board = [
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1],
-    [-1,-1,-1,-1,-1,-1,-1,-1]
-]
 
 perms = (p) => {
     return [
@@ -53,13 +40,9 @@ board = visited = {
     a8: {}, b8: {}, c8: {}, d8: {}, e8: {}, f8: {}, g8: {}, h8: {}
 }
 
+nodes = {}
 
-// k = [6,0]
-// board[k[0]][k[1]] = 'K'
-// target = [3,4]
-// board[target[0]][target[1]] = 'T'
 
-// board
 
 
 cols = 'abcdefgh'
@@ -73,34 +56,69 @@ rc_coord = (rc_ref) => {
     return [c, r]
 }
 
-rc_coord('c5')
-
-nodes = {}
+markVisited = (_grid) => {
+    rcref = rc(_grid.data)
+    if (!nodes[rcref]) nodes[rcref] = _grid
+    if (!visited[rcref]) visited[rcref] = rcref
+}
+// checks: rc_coord('c5')
+// checks: rccoord = rc_coord(rcref) 
 
 // start point
-knight = [6,0]
-rcref = rc(knight)
-// check rccoord = rc_coord(rcref) 
-visited[rcref] = rcref
+start = knight = [6,0]
+// end point
+target = [3,4]
+
 _grid = node(knight, -1)
-nodes[rcref] = _grid
 
 recurse = 5
 
 // all possible moves from this grid/coord
 _nextMoves = perms(_grid)
-_nextMoves.forEach(move => {
-    // move = [x,y]
+_nextMoves.forEach(move => { // move = [x,y]
+    _move = node(move, _grid.dist, rc(_grid.data))
+    if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
+        // avoid direct return to prev
+        if (!visited[rc(_move.data)]) { _grid.next.push(_move) } //.data)
+        markVisited(_move)
+    }
+})
+
+_grid
+
+// all good to here
+_grid.next.forEach(_grid => {
+    _nextMoves = perms(_grid)
+    _nextMoves.forEach(move => { // move = [x,y]
+        _move = node(move, _grid.dist, rc(_grid.data))
+        if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
+            // avoid direct return to prev
+            markVisited(_move)
+            _grid.next.push(_move) //.data)
+        }
+    })
+})
+
+
+nodes
+visited
+
+_grid = _grid.next[1].next[0]
+
+_nextMoves.forEach(move => { // move = [x,y]
     _move = node(move, _grid.dist, rc(_grid.data))
     if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
         // avoid direct return to prev
         _grid.next.push(_move.data)
-        // return add_nodes(_move)
     }
-    // if (recurse == 5) return
 })
 
-_grid
+
+
+
+
+
+
 
 _grid.next.forEach(_coord => {
     // grid = node(_coord, _grid.dist, rc(_grid.data))
@@ -119,6 +137,11 @@ _grid.next.forEach(_coord => {
 }) 
 
 _grid
+
+
+
+/*
+
 
 
 // all possible moves from previous coords
@@ -309,6 +332,16 @@ v is a vertex
 
 
 
+board = [
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1],
+    [-1,-1,-1,-1,-1,-1,-1,-1]
+]
 
 
 */
