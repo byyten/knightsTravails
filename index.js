@@ -18,76 +18,353 @@ add = (p, m) => {
 
 perms = (p) => {
     return [
-        add(p.data, [1,2]),
-        add(p.data, [-1,2]),
-        add(p.data, [1,-2]),
-        add(p.data, [-1,-2]),
-        add(p.data, [2,1]),
-        add(p.data, [2,-1]),
-        add(p.data, [-2,1]),
-        add(p.data, [-2,-1])
+        add(p.data, [1, 2]),
+        add(p.data, [-1, 2]),
+        add(p.data, [1, -2]),
+        add(p.data, [-1, -2]),
+        add(p.data, [2, 1]),
+        add(p.data, [2, -1]),
+        add(p.data, [-2, 1]),
+        add(p.data, [-2, -1])
     ].filter(_p => _p !== undefined)
 }
 
-board = visited = { 
-    a1: {}, b1: {}, c1: {}, d1: {}, e1: {}, f1: {}, g1: {}, h1: {},
-    a2: {}, b2: {}, c2: {}, d2: {}, e2: {}, f2: {}, g2: {}, h2: {},
-    a3: {}, b3: {}, c3: {}, d3: {}, e3: {}, f3: {}, g3: {}, h3: {},
-    a4: {}, b4: {}, c4: {}, d4: {}, e4: {}, f4: {}, g4: {}, h4: {},
-    a5: {}, b5: {}, c5: {}, d5: {}, e5: {}, f5: {}, g5: {}, h5: {},
-    a6: {}, b6: {}, c6: {}, d6: {}, e6: {}, f6: {}, g6: {}, h6: {},
-    a7: {}, b7: {}, c7: {}, d7: {}, e7: {}, f7: {}, g7: {}, h7: {},
-    a8: {}, b8: {}, c8: {}, d8: {}, e8: {}, f8: {}, g8: {}, h8: {}
-}
-
-nodes = {}
-
-
-
-
-cols = 'abcdefgh'
-rows = [1,2,3,4,5,6,7,8]
 rc = (coord) => {
     return cols[coord[0]] + rows[coord[1]]
 }
+
 rc_coord = (rc_ref) => {
     c = cols.indexOf(rc_ref[0])
     r = Number(rc_ref[1]) - 1
     return [c, r]
 }
 
-markVisited = (_grid) => {
-    rcref = rc(_grid.data)
-    if (!nodes[rcref]) nodes[rcref] = _grid
-    if (!visited[rcref]) visited[rcref] = rcref
+nodesVisited = () => [ Object.keys(nodes).length, Object.keys(nodes).includes(target_rcref) ]
+
+reachedTarget = (nodes, ref) => Object.keys(nodes).includes(ref)
+
+gamestatus = () => {
+    v = nodesVisited(nodes)
+    t = reachedTarget(nodes, target_rcref)
+    if (t) console.log(['visited ', v, '  arrived ', t].join('')) 
 }
+
+gridMoves = (_grid) => {
+    _nextMoves = perms(_grid)
+    _nextMoves.forEach(move => { // move = [x,y]
+        _move = node(move, _grid.dist, rc(_grid.data))
+        if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1] ) { // and avoid revisiting a previous grid && nodes[rc(_move.data)] == undefined
+            // avoid direct return to prev 
+            markVisited(_move)
+            _grid.next.push(_move)
+
+            // if (nodes[rc(_move.data)] == undefined)
+
+        }
+        if ( _move.dist <= recurse && !reachedTarget(nodes, target_rcref)) { //
+            gamestatus()
+            gridMoves(_move)
+        } else if (reachedTarget(nodes, target_rcref)) {
+            markVisited(_move)
+        }
+    })
+}
+
+
+markVisited = (_move) => {
+    rcref = rc(_move.data)
+    if (nodes[rcref] == undefined) { nodes[rcref] = _move }
+    if (visited[rcref] !== rcref) { visited[rcref] = rcref }
+}
+
+nextMoves = (__grid) => {
+    _nextMoves = perms(__grid);
+    _nextMoves.forEach(move => { // move = [x,y]
+        _move = node(move, __grid.dist, rc(__grid.data))
+        // avoid direct return to prev
+        if (move[0] !== __grid.data[0] && move[1] !== __grid.data[1]) {
+            rcref = rc(_move.data)
+            // if not already visited add to next possible moves
+            if (visited[rcref] !== rcref) { 
+                __grid.next.push(_move) 
+            } // and mark as visited
+            markVisited(_move)
+        } 
+        if (reachedTarget(nodes, target_rcref)) {
+            markVisited(_move)
+        }
+    })
+    return __grid
+}
+
+
+get_path = (nodes) => {
+    path = []
+    prev_node = nodes[rc(dest)]
+    dist = prev_node.dist
+    path.push([prev_node.prev, prev_node.data])
+    
+    while (prev_node.prev !== null && prev_node.prev !== rc(dest) ) {
+      prev_node = nodes[prev_node.prev]
+      path.push([prev_node.prev === null ? 'start': prev_node.prev, prev_node.data])
+    }
+    return [path, dist]
+}
+
+
+board = visit = () => { 
+    return {
+        a1: {}, b1: {}, c1: {}, d1: {}, e1: {}, f1: {}, g1: {}, h1: {},
+        a2: {}, b2: {}, c2: {}, d2: {}, e2: {}, f2: {}, g2: {}, h2: {},
+        a3: {}, b3: {}, c3: {}, d3: {}, e3: {}, f3: {}, g3: {}, h3: {},
+        a4: {}, b4: {}, c4: {}, d4: {}, e4: {}, f4: {}, g4: {}, h4: {},
+        a5: {}, b5: {}, c5: {}, d5: {}, e5: {}, f5: {}, g5: {}, h5: {},
+        a6: {}, b6: {}, c6: {}, d6: {}, e6: {}, f6: {}, g6: {}, h6: {},
+        a7: {}, b7: {}, c7: {}, d7: {}, e7: {}, f7: {}, g7: {}, h7: {},
+        a8: {}, b8: {}, c8: {}, d8: {}, e8: {}, f8: {}, g8: {}, h8: {}
+    }
+}
+let nodes = {}
+
+let cols = 'abcdefgh'
+
+let rows = [1, 2, 3, 4, 5, 6, 7, 8]
+
+
 // checks: rc_coord('c5')
 // checks: rccoord = rc_coord(rcref) 
+let start
+let start_rcref
+let target 
+let target_rcref
+let recurse = 3
+let _grid
+let visited = visit()
+let path
+let dist
+
+
+findTarget = (start, target) => {
+    visited = visit()
+    nodes = {}
+    // recu = 1
+    // start point
+    start_rcref = rc(start)
+    // end point
+    target_rcref = rc(target)
+
+    _grid = node(start, -1)
+    markVisited(_grid)
+    nodesVisited(nodes)
+
+    recu = 1
+    _grid = nextMoves(_grid)
+    nodesVisited(nodes)
+
+    _grids = _grid.next
+    _grids.forEach(_grid => {
+        recu = 1
+        gridMoves(_grid)
+    })
+} 
+
+
+
+
+
+
+
+// testing
+
+    src = [4,2]
+    dest = [0,0]
+    findTarget(src, dest)
+    reachedTarget(nodes, target_rcref)
+
+    [path, dist] = get_path(nodes)
+    path.reverse().forEach(p => console.log(p.toString()) )
+    console.log('distance ' + dist)
+
+// ----------------------------------------
+
+    src = [7,1]
+    dest = [1,0]
+    findTarget(src, dest)
+    reachedTarget(nodes, target_rcref)
+
+    [path, dist] = get_path(nodes)
+    path.reverse().forEach(p => console.log(p.toString()) )
+    console.log('distance ' + dist)
+
+// -----------------------------
+
+    src = [5,3]
+    dest = [5,0]
+    findTarget(src, dest)
+    reachedTarget(nodes, target_rcref)
+
+    [path, dist] = get_path(nodes)
+    path.reverse().forEach(p => console.log(p.toString()) )
+    console.log('distance ' + dist)
+
+// -----------------------------
+
+
+    src = [5,7]
+    dest = [2,0]
+    findTarget(src, dest)
+    reachedTarget(nodes, target_rcref)
+
+    [path, dist] = get_path(nodes)
+    path.reverse().forEach(p => console.log(p.toString()) )
+    console.log('distance ' + dist)
+
+// -----------------------------
+
+    src = [3,3]
+    dest = [4,3]
+    findTarget(src, dest)
+    reachedTarget(nodes, target_rcref)
+
+    [path, dist] = get_path(nodes)
+    path.reverse().forEach(p => console.log(p.toString()) )
+    console.log('distance ' + dist)
+
+// -----------------------------
+
+
+
+find_target = () => {
+    let target_found = -1
+    next_level = []
+    nexts = _grid.next
+    while (target_found === -1) {
+        // assemble breadth search content
+        nexts.forEach(nx => { 
+            nx.next.forEach(n => next_level.push(n) )
+        })        // console.log(next_level)
+        // check for target hit
+        next_level.forEach(nx => {
+            if (rc(nx.data) === target_rcref ) {     // target hit    
+                target_found = true
+                dist = nx.dist
+                console.log(['target ', nx.data, rc(nx.data),target_rcref, nx.dist] )
+            } // else {            // console.log(['miss ', nx.data, rc(nx.data)])
+            // }
+        })
+        nexts = next_level
+        next_level = []
+    }
+}
+
+build_paths_depth = () => {} 
+
+
+
+
+
+
+path = []
+nx = _grid.next[0]
+// while (nx.next.length > 0) {
+//   path.push(rc(nx.data))
+//   nx = n
+// }
+
+// _grid.next.forEach(nx => )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // start point
-start = knight = [6,0]
-// end point
-target = [3,4]
+// start = knight = [6, 0]
+// start_rcref = rc(start)
+// // end point
+// target = [3, 4]
+// target_rcref = rc(target)
 
-_grid = node(knight, -1)
+// _grid = node(start, -1)
+// markVisited(_grid)
+// nodesVisited(nodes)
 
-recurse = 5
+// // recu = 1
+// _grid = nextMoves(_grid)
+// nodesVisited(nodes)
 
-// all possible moves from this grid/coord
-_nextMoves = perms(_grid)
-_nextMoves.forEach(move => { // move = [x,y]
-    _move = node(move, _grid.dist, rc(_grid.data))
-    if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
-        // avoid direct return to prev
-        if (!visited[rc(_move.data)]) { _grid.next.push(_move) } //.data)
-        markVisited(_move)
-    }
+// _grids = _grid.next
+// _grids.forEach(_grid => {
+//     gridMoves(_grid)
+// })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // all good to here
+// // _grid.next.forEach(_grid => {
+
+// _grids.forEach(_grid => {
+//     gridMoves(_grid)
+//     // _nextMoves = perms(_grid)
+//     // _nextMoves.forEach(move => { // move = [x,y]
+//     //     _move = node(move, _grid.dist, rc(_grid.data))
+//     //     if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
+//     //         // avoid direct return to prev
+//     //         markVisited(_move)
+//     //         _grid.next.push(_move) //.data)
+//     //     }
+//     // })
+// })
+
+// nodesVisited(nodes)
+
+
+// _grid.next.length
+
+// _grid.next.length
+// _grid.next[0].next[0]
+
+
+/* 
+
+ _grids.forEach(_grid => {
+    let recu = 1
+    gridMoves(_grid)
 })
+reachedTarget(nodes, target_rcref)
+recu
 
-_grid
+_root.next[0].next[0].next[0]
 
-// all good to here
-_grid.next.forEach(_grid => {
+
+
+
+ _grids = _grid.next[0]
+
+_grids.forEach(_grid => {
     _nextMoves = perms(_grid)
     _nextMoves.forEach(move => { // move = [x,y]
         _move = node(move, _grid.dist, rc(_grid.data))
@@ -99,21 +376,24 @@ _grid.next.forEach(_grid => {
     })
 })
 
-
 nodes
 visited
 
-_grid = _grid.next[1].next[0]
 
+
+// ---------------------------------
+_grid = _grid.next[0].next[0]
+_nextMoves = perms(_grid)
 _nextMoves.forEach(move => { // move = [x,y]
     _move = node(move, _grid.dist, rc(_grid.data))
     if (move[0] !== _grid.data[0] && move[1] !== _grid.data[1]) {
         // avoid direct return to prev
-        _grid.next.push(_move.data)
+        markVisited(_move)
+        _grid.next.push(_move) //.data)
     }
 })
 
-
+_grid.next[0]
 
 
 
@@ -138,7 +418,7 @@ _grid.next.forEach(_coord => {
 
 _grid
 
-
+ */
 
 /*
 
@@ -293,7 +573,7 @@ The prev array contains pointers to previous-hop nodes on the shortest path
 from source to the given vertex (equivalently, it is the next-hop on the path 
     from the given vertex to the source). 
 
-The code u ← vertex in Q with min dist[u], searches for the vertex u in the 
+The code u  vertex in Q with min dist[u], searches for the vertex u in the 
 vertex set Q that has the least dist[u] value. 
 
 Graph.Edges(u, v) returns the length of the edge joining (i.e. the distance between) 
